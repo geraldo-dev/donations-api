@@ -30,13 +30,16 @@ class UserCase:
     def created_user(self):
         __user_model = User(
             username=self.__username,
+            email=self.__email,
             password=crypt_context.hash(self.__password)
         )
+
         try:
+
             self.__db_session.add(__user_model)
             self.__db_session.commit()
             self.__db_session.refresh(__user_model)
-            return self.__username
+            return f'{self.__username}'
         except IntegrityError:
 
             raise HTTPException(

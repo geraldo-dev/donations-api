@@ -6,7 +6,7 @@ from app.auth import UserCase
 # from fastapi.security import OAuth2PasswordRequestForm
 
 
-router = APIRouter(prefix='/user')
+router = APIRouter()
 
 
 @router.post('/register', status_code=201)
