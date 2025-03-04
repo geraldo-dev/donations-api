@@ -1,4 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
+from datetime import datetime
 
 
 class UserBase(BaseModel):
@@ -12,3 +13,7 @@ class UserCreate(UserBase):
 
 class UserResponse(UserBase):
     user_id: int
+    created_at: datetime = Field(default_factory=datetime.now)
+
+    class Config:
+        from_attributes = True

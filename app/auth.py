@@ -21,17 +21,19 @@ crypt_context = CryptContext(schemes=['sha256_crypt'])
 
 
 class UserCase:
-    def __init__(self, user: UserCreate, db_session: Session):
-        self.__username = user.username
-        self.__email = user.email
-        self.__password = user.password
+    def __init__(self, db_session: Session):
+        # self.__username = user.username
+        # self.__email = user.email
+        # self.__password = user.password
         self.__db_session = db_session
 
-    def created_user(self):
+    def created_user(self, user: UserCreate):
+
+        # def created_user(self):
         __user_model = User(
-            username=self.__username,
-            email=self.__email,
-            password=crypt_context.hash(self.__password)
+            username=user.username,
+            email=user.email,
+            password=crypt_context.hash(user.password)
         )
 
         try:
@@ -39,17 +41,26 @@ class UserCase:
             self.__db_session.add(__user_model)
             self.__db_session.commit()
             self.__db_session.refresh(__user_model)
-            return f'{self.__username}'
+            return f'{user.username}'
         except IntegrityError:
 
             raise HTTPException(
                 status_code=401, detail='Invalid username or password')
 
-    def check_by_email(self):
+    def check_by_email(self, email: str):
         user = self.__db_session.query(User).where(
-            User.email == self.__email).first()
+            User.email == email).first()
 
         if user:
             raise HTTPException(
                 status_code=400, detail='email already exists')
         return False
+
+    def get_by_id(self, user_id: int):
+        user = self.__db_session.query(User).where(
+            User.user_id == user_id).first()
+
+        if not user:
+            raise HTTPException(
+                status_code=404, detail='user not found')
+        return user
