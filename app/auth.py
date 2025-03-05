@@ -1,10 +1,10 @@
 from dotenv import load_dotenv
 from sqlalchemy.exc import IntegrityError
 from app.models.user import User
-from app.schemas.user import UserCreate
+from app.schemas.user import UserCreate, Login
 from jose import jwt, JWTError
 from sqlalchemy.orm import Session
-from app.utils import hash_password
+from app.utils import hash_password, hash_verify_password
 from fastapi import HTTPException
 from datetime import datetime, timedelta
 import os
@@ -57,3 +57,52 @@ class UserCase:
             raise HTTPException(
                 status_code=404, detail='user not found')
         return user
+
+    def login_user(self, username: str, password: str, expires_in: int = 30):
+        __find_user = self.__db_session.query(User).where(
+            User.username == username).first()
+
+        if __find_user is None:
+            raise HTTPException(
+                status_code=401, detail='Invalid email or password'
+            )
+
+        if not hash_verify_password(str(password), str(__find_user.password)):
+            raise HTTPException(
+                status_code=401, detail='Invalid username or password'
+            )
+
+        exp = datetime.utcnow() + timedelta(minutes=expires_in)
+
+        payload = {
+            'sub': __find_user.username,
+            'exp': exp
+        }
+
+        access_token = jwt.encode(payload, str(
+            SECRET_KEY), algorithm=str(ALGORITM))
+
+        # response delivery model otherwise the header does not find the token
+        return {
+            'access_token': access_token,
+            'exp': exp.isoformat()
+        }
+
+    def token_verifier(self, access_token):
+        try:
+            data = jwt.decode(access_token, str(SECRET_KEY),
+                              algorithms=[str(ALGORITM)])
+        except JWTError:
+            raise HTTPException(
+                status_code=401,
+                detail='Invalid access token'
+            )
+
+        user_on_db = self.__db_session.query(
+            User).filter_by(username=data['sub']).first()
+
+        if user_on_db is None:
+            raise HTTPException(
+                status_code=401,
+                detail='Invalid access token'
+            )
