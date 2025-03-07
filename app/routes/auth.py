@@ -10,18 +10,12 @@ router = APIRouter()
 
 
 @router.post('/register', status_code=201)
-def user_register(user: UserCreate, db_session: Session = Depends(get_db)):
+def user_register(user: UserCreate, db_session: Session = Depends(get_db), Auth=Depends(token_verifier_admin)):
     new_user = UserCase(db_session)
     # verifica se admin
     new_user.check_by_email(user.email)
 
     return new_user.created_user(user)
-
-
-@router.get('/teste')
-def get_user_teste(db_session: Session = Depends(get_db), Auth=Depends(token_verifier)):
-    # verifica se admin
-    return 'admin'
 
 
 @router.get('/{user_id}', status_code=200, response_model=UserResponse)

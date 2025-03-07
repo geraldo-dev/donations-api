@@ -127,13 +127,12 @@ class UserCase:
                     status_code=401,
                     detail='Invalid access token'
                 )
-            x: dict = user_on_db.__dict__
-            print('---->', x['is_admin'])
-            print('---->', x['email'])
-            if x['is_admin'] != True:
+            user_login: dict = user_on_db.__dict__
+
+            if user_login['is_admin'] != True:
                 raise HTTPException(
                     status_code=401,
-                    detail='voce não e admin'
+                    detail='you are not admin'
                 )
 
         except JWTError:
