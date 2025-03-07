@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 from sqlalchemy.exc import IntegrityError
 from app.models.user import User
+from fastapi import Depends
 from app.schemas.user import UserCreate, Login
 from jose import jwt, JWTError
 from sqlalchemy.orm import Session
@@ -8,6 +9,11 @@ from app.utils import hash_password, hash_verify_password
 from fastapi import HTTPException
 from datetime import datetime, timedelta
 import os
+
+from fastapi.security import OAuth2PasswordBearer
+
+oauth_scheme = OAuth2PasswordBearer(tokenUrl='/user/login')
+
 
 # loads the environment variables
 load_dotenv()
@@ -92,16 +98,45 @@ class UserCase:
         try:
             data = jwt.decode(access_token, str(SECRET_KEY),
                               algorithms=[str(ALGORITM)])
+
+            user_on_db = self.__db_session.query(
+                User).filter_by(username=data['sub']).first()
+
+            if user_on_db is None:
+                raise HTTPException(
+                    status_code=401,
+                    detail='Invalid access token'
+                )
+
         except JWTError:
             raise HTTPException(
                 status_code=401,
                 detail='Invalid access token'
             )
 
-        user_on_db = self.__db_session.query(
-            User).filter_by(username=data['sub']).first()
+    def verifier_admin(self, access_token):
+        try:
+            data = jwt.decode(access_token, str(SECRET_KEY),
+                              algorithms=[str(ALGORITM)])
 
-        if user_on_db is None:
+            user_on_db = self.__db_session.query(
+                User).filter_by(username=data['sub']).first()
+
+            if user_on_db is None:
+                raise HTTPException(
+                    status_code=401,
+                    detail='Invalid access token'
+                )
+            x: dict = user_on_db.__dict__
+            print('---->', x['is_admin'])
+            print('---->', x['email'])
+            if x['is_admin'] != True:
+                raise HTTPException(
+                    status_code=401,
+                    detail='voce não e admin'
+                )
+
+        except JWTError:
             raise HTTPException(
                 status_code=401,
                 detail='Invalid access token'
